@@ -22,74 +22,55 @@ import './App.css';
 const PROJECTS = [
   {
     title: "AI Digital Parking System",
-    description: "Real-time computer vision system detecting parking slot availability using OpenCV with backend automation and database tracking.",
-    tech: ["Python", "OpenCV", "SQL Server", "AI Logic"],
-    image: "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&q=80&w=800", // High quality fallback
-    github: "#",
+    description: "Real-time computer vision system that detects parking slot availability using OpenCV. Improves parking efficiency through automation.",
+    tech: ["Python", "OpenCV", "AI Logic", "Backend"],
+    image: "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&q=80&w=800",
+    github: "https://github.com/Harish-Gen/",
     live: "#"
   },
   {
-    title: "EcoTrack API",
-    description: "Highly scalable RESTful API designed for environmental monitoring, featuring real-time data ingestion and analytics dashboards.",
-    tech: [".NET Core", "Redis", "PostgreSQL", "Docker"],
-    image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=800",
-    github: "#",
+    title: "Rule Management System (GRC Application)",
+    description: "Dynamic rule engine to create, update, and manage complex business rules using JSON structures with nested conditions.",
+    tech: [".NET Core", "SQL Server", "React Query Builder", "JSON"],
+    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800",
+    github: "https://github.com/Harish-Gen/",
     live: "#"
   },
   {
-    title: "Neural Vision Dashboard",
-    description: "A comprehensive management interface for distributed AI processing nodes, providing deep insights into model performance metrics.",
-    tech: ["React", "D3.js", "Node.js", "WebSockets"],
-    image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800",
-    github: "#",
+    title: "Employee Task Management API",
+    description: "Backend system to manage employee tasks with CRUD operations, Repository Pattern, and automated scheduling.",
+    tech: [".NET Core", "Entity Framework", "Unit of Work", "SQL Server"],
+    image: "https://images.unsplash.com/photo-1454165833767-027ffea7028c?auto=format&fit=crop&q=80&w=800",
+    github: "https://github.com/Harish-Gen/",
     live: "#"
   }
 ];
 
 const EXPERIENCE = [
   {
-    date: "2023 - Present",
-    title: "Backend-focused Engineer",
-    company: "TechInnova Solutions",
-    description: "Leading the development of high-performance microservices and AI-driven automation tools. Optimized database queries by 40%."
+    date: "May 2025 – Present",
+    title: "Software Engineer",
+    company: "JOY IT Solutions",
+    description: "Building and maintaining backend services using .NET and SQL Server. Developing scalable APIs for enterprise applications."
   },
   {
-    date: "2021 - 2023",
-    title: "Full Stack Developer",
-    company: "DataStream Systems",
-    description: "Developed and maintained several client-facing web applications focusing on real-time data visualization and scalability."
+    date: "Apr 2024 – May 2025",
+    title: "Analyst",
+    company: "Objectways Technologies",
+    description: "Worked on NLP-based AI projects using Amazon SageMaker. Processed and analyzed large datasets for machine learning models."
   },
   {
-    date: "2020 - 2021",
-    title: "Software Engineering Intern",
-    company: "NexGen Labs",
-    description: "Assisted in building internal tooling for automated testing and documentation workflows."
-  }
-];
-
-const TESTIMONIALS = [
-  {
-    name: "Alex Rivers",
-    role: "CTO @ CloudScale",
-    content: "Harish is a rare talent who understands both the low-level architecture and the high-level product goals. His work on our API performance was transformative."
-  },
-  {
-    name: "Sarah Chen",
-    role: "Head of AI @ Visionary",
-    content: "The computer vision models Harish developed for us were remarkably accurate and easy to integrate. His technical depth is impressive."
-  },
-  {
-    name: "Marcus Thorne",
-    role: "Founder @ EcoLogix",
-    content: "Professional, efficient, and highly skilled. Harish delivered our backend infrastructure ahead of schedule and with zero defects."
+    date: "Mar 2023 – Jul 2023",
+    title: "Full Stack Developer (Internship)",
+    company: "Infognana Solutions",
+    description: "Developed web applications using JavaScript and Node.js. Built frontend components and backend APIs."
   }
 ];
 
 const SKILLS = {
-  Frontend: ["React", "JavaScript", "CSS3", "Framer Motion", "Tailwind"],
-  Backend: [".NET Core", "Node.js", "Python", "REST APIs", "gRPC"],
-  Database: ["SQL Server", "PostgreSQL", "MongoDB", "Redis"],
-  Tools: ["Docker", "Git", "Jenkins", "AWS", "Linux"]
+  "Core & Backend": ["C# / .NET Core", "Entity Framework", "REST APIs", "Node.js", "System Design"],
+  "Data & AI": ["Python", "OpenCV", "Amazon SageMaker", "SQL Server", "PostgreSQL"],
+  "Frontend & Web": ["React.js", "JavaScript", "Tailwind CSS", "Framer Motion"]
 };
 
 /* ------------------- COMPONENTS ------------------- */
@@ -221,7 +202,7 @@ export default function App() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
             >
-              Building the invisible machines
+              Backend Engineer & AI Specialized
             </motion.span>
             <motion.h1 
               className="hero-title"
@@ -238,7 +219,7 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              I architect scalable APIs and intelligent systems that power real-world applications with precision and efficiency.
+              Backend Engineer specializing in scalable APIs, AI-powered systems, and production-grade applications. Focused on efficient architectures and cloud-based AI solutions.
             </motion.p>
             <motion.div 
               className="cta-group"
@@ -266,10 +247,10 @@ export default function App() {
               <h2 className="section-title">Crafting logic with Purpose</h2>
               <div className="about-text">
                 <p>
-                  I'm a software engineer based in India with a passion for designing systems that are both robust and elegant. My journey started with a fascination for logic puzzles, which eventually translated into building complex backend architectures.
+                  Specializing in .NET, Python, and React, with hands-on work in NLP, computer vision, and cloud-based AI solutions using Amazon SageMaker.
                 </p>
                 <p>
-                  Currently, I specialize in Backend development (C#/.NET, Node.js) and AI integration (OpenCV, Python), bridging the gap between raw data and actionable intelligence.
+                  Focused on building efficient backend architectures, optimizing performance, and delivering real-world solutions.
                 </p>
               </div>
             </motion.div>
@@ -347,49 +328,6 @@ export default function App() {
         </div>
       </section>
 
-      {/* TESTIMONIALS SECTION */}
-      <section id="testimonials">
-        <div className="container">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            style={{ textAlign: 'center', marginBottom: '60px' }}
-          >
-            <span className="section-label">04. Feedback</span>
-            <h2 className="section-title">What People Say</h2>
-          </motion.div>
-          
-          <div className="projects-grid">
-            {TESTIMONIALS.map((test, i) => (
-              <motion.div 
-                key={test.name}
-                className="project-card glass"
-                style={{ padding: '40px' }}
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                whileHover={{ y: -5 }}
-              >
-                <p className="project-desc" style={{ fontStyle: 'italic', fontSize: '1.1rem', marginBottom: '24px' }}>
-                  "{test.content}"
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
-                    {test.name.charAt(0)}
-                  </div>
-                  <div>
-                    <h4 style={{ margin: 0 }}>{test.name}</h4>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{test.role}</span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CONTACT SECTION */}
       <section id="contact">
         <div className="container">
@@ -402,12 +340,12 @@ export default function App() {
               <span className="section-label">05. Connection</span>
               <h1 className="contact-info-title">Let’s build something <span className="gradient-text">extraordinary</span> together.</h1>
               <p className="about-text">
-                Currently open to backend partnerships, AI research collaborations, and full-time opportunities.
+                Open to backend developer roles and AI-driven product opportunities. Let’s build scalable and intelligent systems together.
               </p>
               <div className="social-links">
-                <a href="#" className="social-link"><Github size={24} /></a>
-                <a href="#" className="social-link"><Linkedin size={24} /></a>
-                <a href="#" className="social-link"><Mail size={24} /></a>
+                <a href="https://github.com/Harish-Gen/" className="social-link" target="_blank" rel="noopener noreferrer"><Github size={24} /></a>
+                <a href="https://www.linkedin.com/in/im-harishkumar/" className="social-link" target="_blank" rel="noopener noreferrer"><Linkedin size={24} /></a>
+                <a href="mailto:harishpalani2023@gmail.com" className="social-link"><Mail size={24} /></a>
               </div>
             </motion.div>
 
