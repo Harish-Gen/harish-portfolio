@@ -77,63 +77,43 @@ const SKILLS = {
 
 const CustomCursor = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [isHovering, setIsHovering] = useState(false);
+  const mouseX = useSpring(0, { stiffness: 500, damping: 30 });
+  const mouseY = useSpring(0, { stiffness: 500, damping: 30 });
 
   useEffect(() => {
-    const handleMouseMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
-    const handleMouseOver = (e) => {
-      if (e.target.closest('button, a, .project-card')) setIsHovering(true);
-      else setIsHovering(false);
+    const handleMouseMove = (e) => {
+      mouseX.set(e.clientX);
+      mouseY.set(e.clientY);
     };
-
     window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseover', handleMouseOver);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseover', handleMouseOver);
-    };
-  }, []);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [mouseX, mouseY]);
 
   return (
     <motion.div 
-      className={`custom-cursor ${isHovering ? 'hovering' : ''}`}
-      animate={{ 
-        x: mousePos.x, 
-        y: mousePos.y,
-        scale: isHovering ? 1.5 : 1
+      className="custom-cursor"
+      style={{ 
+        x: mouseX, 
+        y: mouseY,
+        translateX: '-50%',
+        translateY: '-50%'
       }}
-      transition={{ type: 'spring', stiffness: 500, damping: 28, mass: 0.5 }}
     />
   );
 };
 
 const Navbar = ({ darkTheme, toggleTheme }) => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 50);
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
-      <motion.div 
-        className="nav-progress" 
-        style={{ 
-          scaleX, 
-          position: 'absolute', 
-          bottom: 0, 
-          left: 0, 
-          right: 0, 
-          height: '2px', 
-          background: 'var(--gradient-primary)',
-          transformOrigin: '0%'
-        }} 
-      />
-      <div className="container nav-content">
+    <nav className={`navbar glass ${isScrolled ? 'scrolled' : ''}`}>
+      <div className="nav-content">
         <a href="#home" className="logo">Harish.dev</a>
         
         <div className="nav-links">
@@ -141,7 +121,7 @@ const Navbar = ({ darkTheme, toggleTheme }) => {
             <a key={item} href={`#${item.toLowerCase()}`} className="nav-link">{item}</a>
           ))}
           <button onClick={toggleTheme} className="theme-toggle">
-            {darkTheme ? <Sun size={20} /> : <Moon size={20} />}
+            {darkTheme ? <Sun size={18} /> : <Moon size={18} />}
           </button>
         </div>
       </div>
@@ -153,11 +133,14 @@ const ProjectCard = ({ project, index }) => {
   return (
     <motion.div 
       className="project-card glass"
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.1 }}
-      whileHover={{ y: -10 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ 
+        duration: 0.8, 
+        delay: index * 0.1,
+        ease: [0.16, 1, 0.3, 1] 
+      }}
     >
       <div className="project-image-container">
         <img src={project.image} alt={project.title} className="project-image" />
@@ -165,12 +148,12 @@ const ProjectCard = ({ project, index }) => {
       <div className="project-info">
         <h3 className="project-title">{project.title}</h3>
         <p className="project-desc">{project.description}</p>
-        <div className="project-tech">
+        <div className="project-tech" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
           {project.tech.map((t) => <span key={t} className="tech-pill">{t}</span>)}
         </div>
         <div className="project-links">
-          <a href={project.github} className="project-link"><Github size={18} /> Repo</a>
-          <a href={project.live} className="project-link"><ExternalLink size={18} /> Demo</a>
+          <a href={project.github} className="project-link"><Github size={16} /> <span style={{ borderBottom: '1px solid transparent', transition: '0.3s' }}>Code</span></a>
+          <a href={project.live} className="project-link"><ExternalLink size={16} /> <span style={{ borderBottom: '1px solid transparent', transition: '0.3s' }}>Live</span></a>
         </div>
       </div>
     </motion.div>
@@ -188,44 +171,50 @@ export default function App() {
 
   return (
     <div className="app-wrapper">
+      <div className="noise-overlay"></div>
+      <div className="blob-container">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+      </div>
+      
       <CustomCursor />
       <Navbar darkTheme={darkTheme} toggleTheme={toggleTheme} />
 
       {/* HERO SECTION */}
       <section id="home" className="hero">
-        <div className="hero-glow"></div>
         <div className="container">
           <div className="hero-content">
             <motion.span 
               className="hero-tagline"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             >
               Backend Engineer & AI Specialized
             </motion.span>
             <motion.h1 
               className="hero-title"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             >
               Hi, I'm <span className="gradient-text">Harish Kumar</span><br />
               Backend & AI Engineer.
             </motion.h1>
             <motion.p 
               className="hero-description"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
+              transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
-              Backend Engineer specializing in scalable APIs, AI-powered systems, and production-grade applications. Focused on efficient architectures and cloud-based AI solutions.
+              Specializing in scalable APIs, AI-powered systems, and production-grade applications. Focused on efficient architectures and cloud-based AI solutions.
             </motion.p>
             <motion.div 
               className="cta-group"
-              initial={{ opacity: 0, y: 20 }}
+              style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
+              transition={{ duration: 1, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
             >
               <a href="#projects" className="btn btn-primary">View Work <ArrowRight size={18} /></a>
               <a href="#contact" className="btn btn-outline">Let's Talk</a>
@@ -239,9 +228,10 @@ export default function App() {
         <div className="container">
           <div className="about-grid">
             <motion.div
-              initial={{ opacity: 0, x: -30 }}
+              initial={{ opacity: 0, x: -40 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             >
               <span className="section-label">01. About Me</span>
               <h2 className="section-title">Crafting logic with Purpose</h2>
@@ -258,11 +248,11 @@ export default function App() {
             <div className="skills-categories">
               {Object.entries(SKILLS).map(([category, items], i) => (
                 <motion.div 
-                  key={category}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
+                   key={category}
+                   initial={{ opacity: 0, y: 30 }}
+                   whileInView={{ opacity: 1, y: 0 }}
+                   viewport={{ once: true }}
+                   transition={{ duration: 1, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <h3 className="skill-category-title">{category}</h3>
                   <div className="skill-tags">
@@ -279,9 +269,10 @@ export default function App() {
       <section id="projects">
         <div className="container">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
           >
             <span className="section-label">02. Selected Work</span>
             <h2 className="section-title">Featured Projects</h2>
@@ -299,9 +290,10 @@ export default function App() {
       <section id="experience">
         <div className="container">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             style={{ textAlign: 'center' }}
           >
             <span className="section-label">03. Journey</span>
@@ -312,11 +304,11 @@ export default function App() {
             {EXPERIENCE.map((exp, i) => (
               <motion.div 
                 key={exp.title} 
-                className="experience-item"
-                initial={{ opacity: 0, x: -20 }}
+                className="experience-item glass"
+                initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ duration: 1, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
               >
                 <span className="exp-date">{exp.date}</span>
                 <h3 className="exp-title">{exp.title}</h3>
@@ -336,28 +328,30 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             >
               <span className="section-label">05. Connection</span>
-              <h1 className="contact-info-title">Let’s build something <span className="gradient-text">extraordinary</span> together.</h1>
+              <h1 className="contact-info-title">Let’s build something <span className="gradient-text">extraordinary</span>.</h1>
               <p className="about-text">
                 Open to backend developer roles and AI-driven product opportunities. Let’s build scalable and intelligent systems together.
               </p>
               <div className="social-links">
-                <a href="https://github.com/Harish-Gen/" className="social-link" target="_blank" rel="noopener noreferrer"><Github size={24} /></a>
-                <a href="https://www.linkedin.com/in/im-harishkumar/" className="social-link" target="_blank" rel="noopener noreferrer"><Linkedin size={24} /></a>
-                <a href="mailto:harishpalani2023@gmail.com" className="social-link"><Mail size={24} /></a>
+                <a href="https://github.com/Harish-Gen/" className="social-link" target="_blank" rel="noopener noreferrer"><Github size={20} /></a>
+                <a href="https://www.linkedin.com/in/im-harishkumar/" className="social-link" target="_blank" rel="noopener noreferrer"><Linkedin size={20} /></a>
+                <a href="mailto:harishpalani2023@gmail.com" className="social-link"><Mail size={20} /></a>
               </div>
             </motion.div>
 
             <motion.form 
               className="contact-form glass"
-              initial={{ opacity: 0, x: 30 }}
+              initial={{ opacity: 0, x: 40 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="form-group">
                 <label className="form-label">Full Name</label>
-                <input type="text" className="form-input" placeholder="Enter your name" />
+                <input type="text" className="form-input" placeholder="Your name" />
               </div>
               <div className="form-group">
                 <label className="form-label">Email Address</label>
@@ -365,7 +359,7 @@ export default function App() {
               </div>
               <div className="form-group">
                 <label className="form-label">Message</label>
-                <textarea className="form-input" placeholder="How can I help you?"></textarea>
+                <textarea className="form-input" placeholder="How can I help you?" style={{ minHeight: '120px' }}></textarea>
               </div>
               <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
                 Send Message <ArrowRight size={18} />
@@ -375,9 +369,10 @@ export default function App() {
         </div>
       </section>
 
-      <footer style={{ padding: '40px 0', textAlign: 'center', borderTop: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-        <p>© 2026 Harish Kumar. Crafted with passion & precision.</p>
+      <footer style={{ padding: '60px 0', textAlign: 'center', opacity: 0.5, fontSize: '0.85rem' }}>
+        <p>© 2026 Harish Kumar. Crafted with passion.</p>
       </footer>
     </div>
   );
 }
+
