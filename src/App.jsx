@@ -45,6 +45,14 @@ const PROJECTS = [
     live: "https://greenmetrics.co/"
   },
   {
+    title: "GRC Application",
+    description: "A configurable Governance, Risk, and Compliance application with a dynamic rule engine for creating and managing complex business rules, including nested conditions.",
+    tech: [".NET Core", "SQL Server", "React Query Builder", "JSON"],
+    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800",
+    github: "https://github.com/Harish-Gen/",
+    live: "https://joyitsolutions.co/grc/"
+  },
+  {
     title: "AI Digital Parking System",
     description: "Real-time computer vision system that detects parking slot availability using OpenCV. Improves parking efficiency through automation.",
     tech: ["Python", "OpenCV", "AI Logic", "Backend"],
