@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
 import { 
   Github, 
@@ -90,6 +90,131 @@ const SKILLS = {
 };
 
 /* ------------------- COMPONENTS ------------------- */
+
+const HeroSignal = () => {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const section = canvas?.parentElement;
+    const context = canvas?.getContext('2d');
+    if (!canvas || !section || !context) return undefined;
+
+    const finePointer = window.matchMedia('(pointer: fine)').matches;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const animate = finePointer && !reducedMotion;
+    const points = [];
+    const pointer = { x: -1000, y: -1000 };
+    let width = 0;
+    let height = 0;
+    let columns = 0;
+    let gap = 72;
+    let frameId;
+    let pixelRatio = 1;
+
+    const resize = () => {
+      const bounds = section.getBoundingClientRect();
+      width = bounds.width;
+      height = bounds.height;
+      pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+      canvas.width = Math.round(width * pixelRatio);
+      canvas.height = Math.round(height * pixelRatio);
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      points.length = 0;
+
+      gap = width < 600 ? 58 : 72;
+      columns = Math.ceil(width / gap) + 1;
+      const rows = Math.ceil(height / gap) + 1;
+      const offsetX = (width - (columns - 1) * gap) / 2;
+      const offsetY = (height - (rows - 1) * gap) / 2;
+
+      for (let row = 0; row < rows; row += 1) {
+        for (let column = 0; column < columns; column += 1) {
+          const x = offsetX + column * gap;
+          const y = offsetY + row * gap;
+          points.push({ x, y, originX: x, originY: y, vx: 0, vy: 0, row, column });
+        }
+      }
+      draw();
+    };
+
+    const onPointerMove = (event) => {
+      if (!animate || event.pointerType === 'touch') return;
+      const bounds = section.getBoundingClientRect();
+      pointer.x = event.clientX - bounds.left;
+      pointer.y = event.clientY - bounds.top;
+    };
+    const onPointerLeave = () => {
+      pointer.x = -1000;
+      pointer.y = -1000;
+    };
+
+    const draw = () => {
+      context.clearRect(0, 0, width, height);
+
+      if (animate) {
+        points.forEach((point) => {
+          const dx = pointer.x - point.x;
+          const dy = pointer.y - point.y;
+          const distance = Math.hypot(dx, dy);
+          if (distance < 170) {
+            const pull = (1 - distance / 170) * 0.48;
+            point.vx += dx * pull * 0.025;
+            point.vy += dy * pull * 0.025;
+          }
+          point.vx += (point.originX - point.x) * 0.025;
+          point.vy += (point.originY - point.y) * 0.025;
+          point.vx *= 0.88;
+          point.vy *= 0.88;
+          point.x += point.vx;
+          point.y += point.vy;
+        });
+      }
+
+      context.lineWidth = 0.7;
+      points.forEach((point) => {
+        const neighbors = [
+          [point.row, point.column + 1],
+          [point.row + 1, point.column - 1],
+          [point.row + 1, point.column],
+          [point.row + 1, point.column + 1],
+        ];
+        neighbors.forEach(([row, column]) => {
+          const neighbor = points[row * columns + column];
+          if (!neighbor || neighbor.row !== row || neighbor.column !== column) return;
+          const distance = Math.hypot(neighbor.x - point.x, neighbor.y - point.y);
+          const opacity = Math.max(0.025, 0.105 * (1 - Math.abs(distance - 72) / 110));
+          context.strokeStyle = `rgba(170,170,165,${opacity})`;
+          context.beginPath();
+          context.moveTo(point.x, point.y);
+          context.lineTo(neighbor.x, neighbor.y);
+          context.stroke();
+        });
+        context.fillStyle = 'rgba(190,190,184,0.5)';
+        context.beginPath();
+        context.arc(point.x, point.y, 1.15, 0, Math.PI * 2);
+        context.fill();
+      });
+
+      if (animate) frameId = window.requestAnimationFrame(draw);
+    };
+
+    const observer = new ResizeObserver(resize);
+    observer.observe(section);
+    section.addEventListener('pointermove', onPointerMove, { passive: true });
+    section.addEventListener('pointerleave', onPointerLeave, { passive: true });
+    resize();
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      observer.disconnect();
+      section.removeEventListener('pointermove', onPointerMove);
+      section.removeEventListener('pointerleave', onPointerLeave);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="hero-signal" aria-hidden="true" />;
+};
 
 const CustomCursor = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -198,6 +323,7 @@ export default function App() {
 
       {/* HERO SECTION */}
       <section id="home" className="hero">
+        <HeroSignal />
         <div className="container">
           <div className="hero-content">
             <motion.span 
