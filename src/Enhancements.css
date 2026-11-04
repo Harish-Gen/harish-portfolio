@@ -89,46 +89,21 @@
 
 /* Compact system-style theme switch */
 .theme-toggle {
-  width: auto;
-  min-width: 69px;
-  height: 30px;
-  padding: 0 7px;
-  gap: 6px;
-  justify-content: flex-start;
+  width: 74px;
+  height: 29px;
+  padding: 0 8px;
+  gap: 7px;
+  justify-content: space-between;
   border-color: var(--line);
-  background: var(--surface);
+  background: transparent;
   color: var(--text);
+  cursor: pointer;
+  transition: border-color 180ms ease, color 180ms ease, background 180ms ease;
 }
 
-.theme-toggle-track {
-  position: relative;
-  width: 29px;
-  height: 15px;
-  flex: 0 0 29px;
-  border: 1px solid var(--secondary);
-  border-radius: 10px;
-  background: var(--bg);
-  transition: border-color 180ms ease, background 180ms ease;
-}
-
-.theme-toggle-knob {
-  position: absolute;
-  top: 1px;
-  left: 1px;
-  width: 11px;
-  height: 11px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--text);
-  color: var(--bg);
-  transition: transform 180ms ease, background 180ms ease, color 180ms ease;
-}
-
-.theme-toggle.is-dark .theme-toggle-knob {
-  transform: translateX(14px);
-  background: var(--red);
-  color: #fff;
+.theme-toggle-icon {
+  display: flex;
+  color: var(--secondary);
 }
 
 .theme-toggle-label {
@@ -136,8 +111,23 @@
   letter-spacing: .08em;
 }
 
-.theme-toggle:hover .theme-toggle-track {
+.theme-toggle-status {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 5px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--red) 18%, transparent);
+}
+
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
   border-color: var(--red);
+  color: var(--red);
+}
+
+.theme-toggle:hover .theme-toggle-icon {
+  color: var(--red);
 }
 
 @media (max-width: 768px) {
@@ -155,24 +145,17 @@
   }
 
   .theme-toggle {
-    min-width: 61px;
-    height: 28px;
-    padding: 0 5px;
-    gap: 4px;
-  }
-
-  .theme-toggle-track {
-    transform: scale(.92);
-    transform-origin: left center;
-    margin-right: -2px;
+    width: 68px;
+    height: 27px;
+    padding: 0 6px;
+    gap: 5px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .section-progress-marker,
   .section-progress button::after,
-  .theme-toggle-track,
-  .theme-toggle-knob {
+  .theme-toggle {
     transition: none;
   }
 }

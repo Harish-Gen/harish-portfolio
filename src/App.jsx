@@ -269,12 +269,11 @@ const Navbar = ({ darkTheme, toggleTheme }) => {
             aria-pressed={darkTheme}
             title={`Current theme: ${darkTheme ? 'dark' : 'light'}`}
           >
-            <span className="theme-toggle-track" aria-hidden="true">
-              <span className="theme-toggle-knob">
-                {darkTheme ? <Moon size={11} /> : <Sun size={11} />}
-              </span>
+            <span className="theme-toggle-icon" aria-hidden="true">
+              {darkTheme ? <Moon size={12} /> : <Sun size={12} />}
             </span>
             <span className="theme-toggle-label">{darkTheme ? 'DARK' : 'LIGHT'}</span>
+            <span className="theme-toggle-status" aria-hidden="true" />
           </button>
         </div>
       </div>
