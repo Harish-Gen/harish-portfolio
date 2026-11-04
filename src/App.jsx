@@ -435,6 +435,9 @@ export default function App() {
             >
               <a href="#projects" className="btn btn-primary">View Work <ArrowRight size={18} /></a>
               <a href="#contact" className="btn btn-outline">Let's Talk</a>
+              <a href="/harish-kumar-cv.pdf" className="btn btn-outline" target="_blank" rel="noopener noreferrer" aria-label="View Harish Kumar's CV in a new tab">
+                View CV <ExternalLink size={15} />
+              </a>
             </motion.div>
           </div>
         </div>
