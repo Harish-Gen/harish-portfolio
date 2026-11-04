@@ -130,6 +130,45 @@
   color: var(--red);
 }
 
+/* Repeating signal node across hero, section labels, and project visuals */
+.hero-tagline::before,
+.section-label::before {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 18%, transparent),
+    0 0 0 6px color-mix(in srgb, var(--red) 8%, transparent);
+}
+
+.section-label::before {
+  content: '';
+  display: inline-block;
+  margin: 0 10px 1px 0;
+  background: var(--red);
+  vertical-align: middle;
+}
+
+.project-image-container::before {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: 18px;
+  right: 18px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--red) 18%, transparent),
+    0 0 0 8px color-mix(in srgb, var(--red) 8%, transparent);
+  transition: box-shadow 220ms ease, transform 220ms ease;
+}
+
+.project-card:hover .project-image-container::before {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--red) 22%, transparent),
+    0 0 0 10px color-mix(in srgb, var(--red) 10%, transparent);
+}
+
 @media (max-width: 768px) {
   .section-progress {
     display: none;
