@@ -21,28 +21,36 @@ import './App.css';
 /* ------------------- DATA ------------------- */
 const PROJECTS = [
   {
+    title: "J-Star Workforce Management Platform",
+    description: "A workforce coordination platform supporting staff scheduling, task assignment, attendance tracking, and real-time workforce management across hospitality, manufacturing, and logistics operations.",
+    tech: ["Workforce Scheduling", "Task Management", "Attendance Tracking", "Operations"],
+    image: "https://images.unsplash.com/photo-1531545514256-b1400bc00f31?auto=format&fit=crop&w=1200&q=80",
+    github: "https://github.com/Harish-Gen/",
+    live: ""
+  },
+  {
+    title: "JOY PIM — Product Information Management",
+    description: "AI-powered product data platform that centralizes product information and digital assets, automates data validation and enrichment, and distributes consistent content across channels.",
+    tech: ["Product Data", "Digital Assets", "AI Processing", "Multi-channel"],
+    image: "https://joypim.com/wp-content/uploads/2024/11/pim.webp",
+    github: "https://github.com/Harish-Gen/",
+    live: "https://joypim.com/"
+  },
+  {
+    title: "Green Metrics — ESG Management Platform",
+    description: "A centralized ESG platform for collecting sustainability data, tracking performance, and creating compliant reports with automated workflows and real-time insights.",
+    tech: ["ESG Data", "Reporting", "Compliance", "Analytics"],
+    image: "https://greenmetrics.co/wp-content/uploads/2024/12/about-2.png",
+    github: "https://github.com/Harish-Gen/",
+    live: "https://greenmetrics.co/"
+  },
+  {
     title: "AI Digital Parking System",
     description: "Real-time computer vision system that detects parking slot availability using OpenCV. Improves parking efficiency through automation.",
     tech: ["Python", "OpenCV", "AI Logic", "Backend"],
     image: "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&q=80&w=800",
     github: "https://github.com/Harish-Gen/",
-    live: "#"
-  },
-  {
-    title: "Rule Management System (GRC Application)",
-    description: "Dynamic rule engine to create, update, and manage complex business rules using JSON structures with nested conditions.",
-    tech: [".NET Core", "SQL Server", "React Query Builder", "JSON"],
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800",
-    github: "https://github.com/Harish-Gen/",
-    live: "#"
-  },
-  {
-    title: "Employee Task Management API",
-    description: "Backend system to manage employee tasks with CRUD operations, Repository Pattern, and automated scheduling.",
-    tech: [".NET Core", "Entity Framework", "Unit of Work", "SQL Server"],
-    image: "https://images.unsplash.com/photo-1454165833767-027ffea7028c?auto=format&fit=crop&q=80&w=800",
-    github: "https://github.com/Harish-Gen/",
-    live: "#"
+    live: ""
   }
 ];
 
@@ -152,8 +160,8 @@ const ProjectCard = ({ project, index }) => {
           {project.tech.map((t) => <span key={t} className="tech-pill">{t}</span>)}
         </div>
         <div className="project-links">
-          <a href={project.github} className="project-link"><Github size={16} /> <span style={{ borderBottom: '1px solid transparent', transition: '0.3s' }}>Code</span></a>
-          <a href={project.live} className="project-link"><ExternalLink size={16} /> <span style={{ borderBottom: '1px solid transparent', transition: '0.3s' }}>Live</span></a>
+          <a href={project.github} className="project-link" target="_blank" rel="noopener noreferrer"><Github size={16} /> <span style={{ borderBottom: '1px solid transparent', transition: '0.3s' }}>Code</span></a>
+          {project.live && <a href={project.live} className="project-link" target="_blank" rel="noopener noreferrer"><ExternalLink size={16} /> <span style={{ borderBottom: '1px solid transparent', transition: '0.3s' }}>Live</span></a>}
         </div>
       </div>
     </motion.div>
@@ -199,7 +207,7 @@ export default function App() {
               transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             >
               Hi, I'm <span className="gradient-text">Harish Kumar</span><br />
-              Backend & AI Engineer.
+              Full Stack Developer.
             </motion.h1>
             <motion.p 
               className="hero-description"
