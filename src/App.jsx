@@ -17,6 +17,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import './App.css';
+import './Enhancements.css';
 
 /* ------------------- DATA ------------------- */
 const PROJECTS = [
@@ -261,11 +262,84 @@ const Navbar = ({ darkTheme, toggleTheme }) => {
           {['About', 'Projects', 'Experience', 'Contact'].map((item) => (
             <a key={item} href={`#${item.toLowerCase()}`} className="nav-link">{item}</a>
           ))}
-          <button onClick={toggleTheme} className="theme-toggle">
-            {darkTheme ? <Sun size={18} /> : <Moon size={18} />}
+          <button
+            onClick={toggleTheme}
+            className={`theme-toggle ${darkTheme ? 'is-dark' : 'is-light'}`}
+            aria-label={`Switch to ${darkTheme ? 'light' : 'dark'} theme`}
+            aria-pressed={darkTheme}
+            title={`Current theme: ${darkTheme ? 'dark' : 'light'}`}
+          >
+            <span className="theme-toggle-track" aria-hidden="true">
+              <span className="theme-toggle-knob">
+                {darkTheme ? <Moon size={11} /> : <Sun size={11} />}
+              </span>
+            </span>
+            <span className="theme-toggle-label">{darkTheme ? 'DARK' : 'LIGHT'}</span>
           </button>
         </div>
       </div>
+    </nav>
+  );
+};
+
+const PAGE_SECTIONS = [
+  { id: 'home', label: 'Home' },
+  { id: 'about', label: 'About' },
+  { id: 'projects', label: 'Projects' },
+  { id: 'experience', label: 'Experience' },
+  { id: 'contact', label: 'Contact' },
+];
+
+const SectionProgress = () => {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    let frameId;
+    const updateActiveSection = () => {
+      frameId = undefined;
+      const markerLine = window.innerHeight * 0.42;
+      let nextIndex = 0;
+      PAGE_SECTIONS.forEach(({ id }, index) => {
+        const section = document.getElementById(id);
+        if (section && section.getBoundingClientRect().top <= markerLine) nextIndex = index;
+      });
+      setActiveIndex(nextIndex);
+    };
+    const onScroll = () => {
+      if (frameId === undefined) frameId = window.requestAnimationFrame(updateActiveSection);
+    };
+
+    updateActiveSection();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, []);
+
+  const markerPosition = 6.3 + (activeIndex / (PAGE_SECTIONS.length - 1)) * 87.4;
+
+  return (
+    <nav className="section-progress" aria-label="Page sections">
+      <span className="section-progress-track" aria-hidden="true" />
+      <span className="section-progress-marker" style={{ top: `${markerPosition}%` }} aria-hidden="true" />
+      {PAGE_SECTIONS.map(({ id, label }, index) => (
+        <button
+          key={id}
+          type="button"
+          className={index === activeIndex ? 'is-active' : ''}
+          aria-label={`Go to ${label} section`}
+          aria-current={index === activeIndex ? 'location' : undefined}
+          onClick={() => document.getElementById(id)?.scrollIntoView({
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+            block: 'start',
+          })}
+        >
+          <span className="sr-only">{label}</span>
+        </button>
+      ))}
     </nav>
   );
 };
@@ -320,6 +394,7 @@ export default function App() {
       
       <CustomCursor />
       <Navbar darkTheme={darkTheme} toggleTheme={toggleTheme} />
+      <SectionProgress />
 
       {/* HERO SECTION */}
       <section id="home" className="hero">
@@ -452,6 +527,7 @@ export default function App() {
                 viewport={{ once: true }}
                 transition={{ duration: 1, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
               >
+                <span className="exp-number" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
                 <span className="exp-date">{exp.date}</span>
                 <h3 className="exp-title">{exp.title}</h3>
                 <span className="exp-company">{exp.company}</span>

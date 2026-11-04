@@ -1,0 +1,178 @@
+/* Section progress rail */
+.section-progress {
+  position: fixed;
+  z-index: 19;
+  top: 50%;
+  right: 18px;
+  width: 22px;
+  height: 142px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  transform: translateY(-50%);
+}
+
+.section-progress-track {
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: 50%;
+  width: 1px;
+  background: var(--line);
+  transform: translateX(-50%);
+}
+
+.section-progress button {
+  position: relative;
+  z-index: 1;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.section-progress button::after {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--secondary);
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.section-progress button:hover::after,
+.section-progress button.is-active::after {
+  background: var(--text);
+  transform: scale(1.35);
+}
+
+.section-progress-marker {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--bg);
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--red) 20%, transparent);
+  transform: translate(-50%, -50%);
+  transition: top 320ms cubic-bezier(.2,.8,.2,1);
+  pointer-events: none;
+}
+
+/* Numbered experience markers on the existing timeline */
+.experience-item::before {
+  display: none;
+}
+
+.exp-number {
+  position: absolute;
+  top: 20px;
+  left: -42px;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--red);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--red);
+  font: 8px var(--mono);
+}
+
+/* Compact system-style theme switch */
+.theme-toggle {
+  width: auto;
+  min-width: 69px;
+  height: 30px;
+  padding: 0 7px;
+  gap: 6px;
+  justify-content: flex-start;
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.theme-toggle-track {
+  position: relative;
+  width: 29px;
+  height: 15px;
+  flex: 0 0 29px;
+  border: 1px solid var(--secondary);
+  border-radius: 10px;
+  background: var(--bg);
+  transition: border-color 180ms ease, background 180ms ease;
+}
+
+.theme-toggle-knob {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 11px;
+  height: 11px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--text);
+  color: var(--bg);
+  transition: transform 180ms ease, background 180ms ease, color 180ms ease;
+}
+
+.theme-toggle.is-dark .theme-toggle-knob {
+  transform: translateX(14px);
+  background: var(--red);
+  color: #fff;
+}
+
+.theme-toggle-label {
+  font: 7px var(--mono);
+  letter-spacing: .08em;
+}
+
+.theme-toggle:hover .theme-toggle-track {
+  border-color: var(--red);
+}
+
+@media (max-width: 768px) {
+  .section-progress {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .exp-number {
+    top: 16px;
+    left: -32px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .theme-toggle {
+    min-width: 61px;
+    height: 28px;
+    padding: 0 5px;
+    gap: 4px;
+  }
+
+  .theme-toggle-track {
+    transform: scale(.92);
+    transform-origin: left center;
+    margin-right: -2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-progress-marker,
+  .section-progress button::after,
+  .theme-toggle-track,
+  .theme-toggle-knob {
+    transition: none;
+  }
+}
