@@ -67,7 +67,7 @@ const EXPERIENCE = [
     date: "May 2025 – Present",
     title: "Software Engineer",
     company: "JOY IT Solutions",
-    description: "Building and maintaining backend services using .NET and SQL Server. Developing scalable APIs for enterprise applications."
+    description: "Building scalable APIs with .NET, SQL Server, and PostgreSQL, plus web and mobile applications with React.js and React Native."
   },
   {
     date: "Apr 2024 – May 2025",
