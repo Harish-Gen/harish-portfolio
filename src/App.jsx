@@ -1,5 +1,8 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
+// motion is consumed in JSX member elements, which core ESLint does not count as variable usage.
+// eslint-disable-next-line no-unused-vars
+import { motion, AnimatePresence, useSpring } from 'framer-motion';
 import { 
   Github, 
   Linkedin, 
@@ -218,7 +221,6 @@ const HeroSignal = () => {
 };
 
 const CustomCursor = () => {
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const mouseX = useSpring(0, { stiffness: 500, damping: 30 });
   const mouseY = useSpring(0, { stiffness: 500, damping: 30 });
 
@@ -244,7 +246,7 @@ const CustomCursor = () => {
   );
 };
 
-const Navbar = ({ darkTheme, toggleTheme }) => {
+const Navbar = ({ darkTheme, toggleTheme, toggleButtonRef }) => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -263,6 +265,8 @@ const Navbar = ({ darkTheme, toggleTheme }) => {
             <a key={item} href={`#${item.toLowerCase()}`} className="nav-link">{item}</a>
           ))}
           <button
+            ref={toggleButtonRef}
+            type="button"
             onClick={toggleTheme}
             className={`theme-toggle ${darkTheme ? 'is-dark' : 'is-light'}`}
             aria-label={`Switch to ${darkTheme ? 'light' : 'dark'} theme`}
@@ -270,7 +274,18 @@ const Navbar = ({ darkTheme, toggleTheme }) => {
             title={`Current theme: ${darkTheme ? 'dark' : 'light'}`}
           >
             <span className="theme-toggle-icon" aria-hidden="true">
-              {darkTheme ? <Moon size={12} /> : <Sun size={12} />}
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={darkTheme ? 'moon' : 'sun'}
+                  className="theme-toggle-glyph"
+                  initial={{ opacity: 0, rotate: -75, scale: 0.55 }}
+                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                  exit={{ opacity: 0, rotate: 75, scale: 0.55 }}
+                  transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  {darkTheme ? <Moon size={12} /> : <Sun size={12} />}
+                </motion.span>
+              </AnimatePresence>
             </span>
             <span className="theme-toggle-label">{darkTheme ? 'DARK' : 'LIGHT'}</span>
             <span className="theme-toggle-status" aria-hidden="true" />
@@ -288,6 +303,22 @@ const PAGE_SECTIONS = [
   { id: 'experience', label: 'Experience' },
   { id: 'contact', label: 'Contact' },
 ];
+
+const liquidPolygon = (centerX, centerY, width, height, radius, phase) => {
+  const points = Array.from({ length: 48 }, (_, index) => {
+    const angle = (index / 48) * Math.PI * 2;
+    const lobes = 1
+      + 0.105 * Math.sin(angle * 3 + phase)
+      + 0.052 * Math.sin(angle * 6 - phase * 0.7)
+      + 0.026 * Math.cos(angle * 11 + phase * 1.4);
+    const distance = radius * lobes;
+    const x = ((centerX + Math.cos(angle) * distance) / width) * 100;
+    const y = ((centerY + Math.sin(angle) * distance) / height) * 100;
+    return `${x.toFixed(2)}% ${y.toFixed(2)}%`;
+  });
+
+  return `polygon(${points.join(', ')})`;
+};
 
 const SectionProgress = () => {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -376,12 +407,76 @@ const ProjectCard = ({ project, index }) => {
 
 export default function App() {
   const [darkTheme, setDarkTheme] = useState(true);
+  const toggleButtonRef = useRef(null);
+  const themeTransitioningRef = useRef(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkTheme ? 'dark' : 'light');
   }, [darkTheme]);
 
-  const toggleTheme = () => setDarkTheme(!darkTheme);
+  const toggleTheme = () => {
+    if (themeTransitioningRef.current) return;
+    const bounds = toggleButtonRef.current?.getBoundingClientRect();
+    if (!bounds) return;
+
+    const targetTheme = darkTheme ? 'light' : 'dark';
+    const x = bounds.left + bounds.width / 2;
+    const y = bounds.top + bounds.height / 2;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const maxRadius = Math.ceil(Math.max(
+      Math.hypot(x, y),
+      Math.hypot(width - x, y),
+      Math.hypot(x, height - y),
+      Math.hypot(width - x, height - y),
+    ));
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const startViewTransition = document.startViewTransition?.bind(document);
+    const commitTheme = () => flushSync(() => {
+      document.documentElement.setAttribute('data-theme', targetTheme);
+      setDarkTheme(targetTheme === 'dark');
+    });
+
+    if (reducedMotion || !startViewTransition) {
+      commitTheme();
+      return;
+    }
+
+    themeTransitioningRef.current = true;
+    const duration = 1080;
+    const animationName = `liquid-theme-${Date.now()}`;
+    const style = document.createElement('style');
+    const frames = [
+      { progress: '0%', radius: 12, phase: 0.2 },
+      { progress: '39%', radius: maxRadius * 0.43, phase: 1.5 },
+      { progress: '76%', radius: maxRadius * 0.81, phase: 2.8 },
+      { progress: '100%', radius: maxRadius + 120, phase: 4.1 },
+    ].map(({ progress, radius, phase }) => (
+      `${progress}{clip-path:${liquidPolygon(x, y, width, height, radius, phase)}}`
+    )).join('\n');
+
+    style.textContent = `
+      @keyframes ${animationName}{${frames}}
+      ::view-transition-new(root){animation:${animationName} ${duration}ms cubic-bezier(.22,.78,.25,1) both}
+    `;
+    document.head.appendChild(style);
+
+    let transition;
+    try {
+      transition = startViewTransition(commitTheme);
+    } catch {
+      style.remove();
+      themeTransitioningRef.current = false;
+      commitTheme();
+      return;
+    }
+
+    const cleanup = () => {
+      style.remove();
+      themeTransitioningRef.current = false;
+    };
+    transition.finished.then(cleanup, cleanup);
+  };
 
   return (
     <div className="app-wrapper">
@@ -392,7 +487,11 @@ export default function App() {
       </div>
       
       <CustomCursor />
-      <Navbar darkTheme={darkTheme} toggleTheme={toggleTheme} />
+      <Navbar
+        darkTheme={darkTheme}
+        toggleTheme={toggleTheme}
+        toggleButtonRef={toggleButtonRef}
+      />
       <SectionProgress />
 
       {/* HERO SECTION */}
