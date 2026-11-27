@@ -7,7 +7,7 @@ const MOVE_SPEED = 270;
 const JUMP_VELOCITY = -560;
 const DOUBLE_JUMP_VELOCITY = -510;
 const MAX_FALL_SPEED = 780;
-const MAX_SAFE_GAP = 145;
+const MAX_SAFE_GAP = 125;
 
 const PLATFORM_SELECTORS = [
   '.contact-form',
@@ -68,11 +68,11 @@ function buildLevelGeometry() {
     const lower = sorted[i + 1];
     const gap = lower.y - upper.y;
     if (gap > MAX_SAFE_GAP) {
-      const steps = Math.ceil(gap / 120) - 1;
+      const steps = Math.ceil(gap / 105) - 1;
       for (let s = 1; s <= steps; s += 1) {
         const t = s / (steps + 1);
         const stoneY = Math.round(upper.y + gap * t);
-        const stoneW = Math.min(74, Math.max(52, viewWidth * 0.14));
+        const stoneW = Math.min(92, Math.max(64, viewWidth * 0.16));
         const upperMid = upper.x + upper.w / 2;
         const lowerMid = lower.x + lower.w / 2;
         const center = upperMid + (lowerMid - upperMid) * t + (s % 2 === 0 ? 36 : -36);
@@ -128,8 +128,12 @@ export default function ClimberGame({ active, onExit }) {
   useEffect(() => {
     if (!active) return undefined;
 
+    const prevScrollBehavior = document.documentElement.style.scrollBehavior;
+    document.documentElement.style.scrollBehavior = 'auto';
+
     const geo = buildLevelGeometry();
     geometryRef.current = geo;
+    let lastWidth = geo.viewWidth;
 
     const state = {
       x: Math.round(geo.viewWidth / 2 - PLAYER_W / 2),
@@ -161,6 +165,9 @@ export default function ClimberGame({ active, onExit }) {
     });
 
     const onResize = () => {
+      const currentWidth = document.documentElement.clientWidth;
+      if (Math.abs(currentWidth - lastWidth) < 2) return;
+      lastWidth = currentWidth;
       const updated = buildLevelGeometry();
       geometryRef.current = updated;
       setStones(updated.steppingStones);
@@ -349,6 +356,7 @@ export default function ClimberGame({ active, onExit }) {
     frameId = window.requestAnimationFrame(tick);
 
     return () => {
+      document.documentElement.style.scrollBehavior = prevScrollBehavior;
       window.cancelAnimationFrame(syncFrameId);
       window.cancelAnimationFrame(frameId);
       window.removeEventListener('resize', onResize);
@@ -363,6 +371,9 @@ export default function ClimberGame({ active, onExit }) {
 
   const setDir = (dir, pressed) => (e) => {
     e.preventDefault();
+    if (pressed) {
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    }
     inputRef.current[dir] = pressed;
   };
 
@@ -420,7 +431,6 @@ export default function ClimberGame({ active, onExit }) {
                 aria-label="Move left"
                 onPointerDown={setDir('left', true)}
                 onPointerUp={setDir('left', false)}
-                onPointerLeave={setDir('left', false)}
                 onPointerCancel={setDir('left', false)}
               >
                 ◀
@@ -431,7 +441,6 @@ export default function ClimberGame({ active, onExit }) {
                 aria-label="Move right"
                 onPointerDown={setDir('right', true)}
                 onPointerUp={setDir('right', false)}
-                onPointerLeave={setDir('right', false)}
                 onPointerCancel={setDir('right', false)}
               >
                 ▶
@@ -443,11 +452,11 @@ export default function ClimberGame({ active, onExit }) {
               aria-label="Jump"
               onPointerDown={(e) => {
                 e.preventDefault();
+                e.currentTarget.setPointerCapture?.(e.pointerId);
                 inputRef.current.up = true;
                 triggerJump();
               }}
               onPointerUp={setDir('up', false)}
-              onPointerLeave={setDir('up', false)}
               onPointerCancel={setDir('up', false)}
             >
               ▲ JUMP
