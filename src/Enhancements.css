@@ -257,6 +257,33 @@
   transition: opacity 160ms ease;
 }
 
+.climber-spring-ripple {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 36px;
+  height: 36px;
+  border: 2px dotted var(--red);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.climber-landed {
+  border-color: var(--red) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--red) 45%, transparent) !important;
+}
+
+.skill-tag.climber-skill-collected {
+  border-color: var(--red);
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+}
+
+.climber-hud-stat.is-record {
+  color: var(--red);
+}
+
 .climber-stone {
   position: absolute;
   height: 4px;

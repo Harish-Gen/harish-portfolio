@@ -6,8 +6,10 @@ const GRAVITY = 1450;
 const MOVE_SPEED = 270;
 const JUMP_VELOCITY = -560;
 const DOUBLE_JUMP_VELOCITY = -510;
+const SPRING_VELOCITY = -790;
 const MAX_FALL_SPEED = 780;
 const MAX_SAFE_GAP = 125;
+const PB_STORAGE_KEY = 'harish_climber_pb';
 
 const PLATFORM_SELECTORS = [
   '.contact-form',
@@ -22,6 +24,25 @@ const PLATFORM_SELECTORS = [
   '.hero-tagline',
 ].join(', ');
 
+function readStoredPB() {
+  try {
+    const raw = window.localStorage.getItem(PB_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = Number.parseFloat(raw);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredPB(seconds) {
+  try {
+    window.localStorage.setItem(PB_STORAGE_KEY, seconds.toFixed(2));
+  } catch {
+    // Ignore storage quota or private-mode restrictions
+  }
+}
+
 /**
  * Scans visible DOM elements into one-way platform rectangles in document coordinates,
  * and inserts subtle stepping-stone nodes across large vertical gaps so the climb
@@ -35,6 +56,7 @@ function buildLevelGeometry() {
 
   const platforms = [];
   const seen = new Set();
+  let totalSkills = 0;
 
   document.querySelectorAll(PLATFORM_SELECTORS).forEach((el) => {
     const rect = el.getBoundingClientRect();
@@ -46,7 +68,12 @@ function buildLevelGeometry() {
     const key = `${x},${y},${w},${h}`;
     if (seen.has(key)) return;
     seen.add(key);
-    platforms.push({ x, y, w, h, kind: 'dom' });
+
+    const isSkill = el.classList.contains('skill-tag');
+    const isSpring = el.classList.contains('btn-primary');
+    if (isSkill) totalSkills += 1;
+
+    platforms.push({ x, y, w, h, kind: 'dom', el, isSkill, isSpring });
   });
 
   // Floor at the bottom near the footer so the player has a solid starting ledge
@@ -102,17 +129,26 @@ function buildLevelGeometry() {
     ? Math.max(95, Math.round(heroTitle.getBoundingClientRect().top + scrollY + 8))
     : 140;
 
-  return { platforms, steppingStones, rail, summitY, floorY, docHeight, viewWidth };
+  return { platforms, steppingStones, rail, summitY, floorY, docHeight, viewWidth, totalSkills };
 }
 
 export default function ClimberGame({ active, onExit }) {
-  const [hud, setHud] = useState({ altitude: 0, elapsed: 0, won: false });
+  const [hud, setHud] = useState({
+    altitude: 0,
+    elapsed: 0,
+    won: false,
+    skills: 0,
+    totalSkills: 0,
+    pb: null,
+    pbLabel: '',
+  });
   const [stones, setStones] = useState([]);
   const [summitY, setSummitY] = useState(140);
   const [runId, setRunId] = useState(0);
 
   const playerRef = useRef(null);
   const puffRef = useRef(null);
+  const springRef = useRef(null);
   const inputRef = useRef({ left: false, right: false, up: false });
   const jumpQueuedRef = useRef(false);
   const geometryRef = useRef(null);
@@ -134,6 +170,22 @@ export default function ClimberGame({ active, onExit }) {
     const geo = buildLevelGeometry();
     geometryRef.current = geo;
     let lastWidth = geo.viewWidth;
+    const initialPb = readStoredPB();
+
+    const collectedSkills = new Set();
+    const flashTimers = new Map();
+
+    const flashElement = (el) => {
+      if (!el) return;
+      el.classList.add('climber-landed');
+      const existingTimer = flashTimers.get(el);
+      if (existingTimer) window.clearTimeout(existingTimer);
+      const timer = window.setTimeout(() => {
+        el.classList.remove('climber-landed');
+        flashTimers.delete(el);
+      }, 320);
+      flashTimers.set(el, timer);
+    };
 
     const state = {
       x: Math.round(geo.viewWidth / 2 - PLAYER_W / 2),
@@ -150,6 +202,7 @@ export default function ClimberGame({ active, onExit }) {
       lastFrame: performance.now(),
       lastHudUpdate: 0,
       puffTimer: 0,
+      springTimer: 0,
     };
 
     // Scroll smoothly to the starting position near the footer
@@ -161,7 +214,15 @@ export default function ClimberGame({ active, onExit }) {
     const syncFrameId = window.requestAnimationFrame(() => {
       setStones(geo.steppingStones);
       setSummitY(geo.summitY);
-      setHud({ altitude: 0, elapsed: 0, won: false });
+      setHud({
+        altitude: 0,
+        elapsed: 0,
+        won: false,
+        skills: 0,
+        totalSkills: geo.totalSkills,
+        pb: initialPb,
+        pbLabel: initialPb ? `PB ${initialPb.toFixed(1)}s` : '',
+      });
     });
 
     const onResize = () => {
@@ -274,6 +335,7 @@ export default function ClimberGame({ active, onExit }) {
           state.vy = Math.min(MAX_FALL_SPEED, state.vy + GRAVITY * dt);
         }
 
+        const wasOnGround = state.onGround;
         const prevBottom = state.y + PLAYER_H;
         state.x += state.vx * dt;
         state.y += state.vy * dt;
@@ -296,8 +358,28 @@ export default function ClimberGame({ active, onExit }) {
             const overlapsX = state.x + PLAYER_W - 2 > p.x && state.x + 2 < p.x + p.w;
             if (overlapsX && prevBottom <= p.y + 6 && newBottom >= p.y) {
               state.y = p.y - PLAYER_H;
-              state.vy = 0;
-              state.onGround = true;
+
+              if (p.el) {
+                if (!wasOnGround) flashElement(p.el);
+                if (p.isSkill && !collectedSkills.has(p.el)) {
+                  collectedSkills.add(p.el);
+                  p.el.classList.add('climber-skill-collected');
+                }
+              }
+
+              if (p.isSpring) {
+                state.vy = SPRING_VELOCITY;
+                state.onGround = false;
+                state.jumpsLeft = 1;
+                state.springTimer = 0.34;
+                if (springRef.current) {
+                  springRef.current.style.transform = `translate3d(${state.x - 11}px, ${p.y - 14}px, 0) scale(1)`;
+                  springRef.current.style.opacity = '1';
+                }
+              } else {
+                state.vy = 0;
+                state.onGround = true;
+              }
               break;
             }
           }
@@ -327,19 +409,62 @@ export default function ClimberGame({ active, onExit }) {
         if (state.y <= currentGeo.summitY) {
           state.won = true;
           const finalTime = (now - state.startTime) / 1000;
-          setHud({ altitude: 100, elapsed: finalTime, won: true });
+          let nextPb = initialPb;
+          let pbLabel = '';
+
+          if (initialPb === null) {
+            nextPb = finalTime;
+            pbLabel = 'FIRST RECORD';
+            writeStoredPB(finalTime);
+          } else if (finalTime < initialPb) {
+            const diff = (initialPb - finalTime).toFixed(1);
+            nextPb = finalTime;
+            pbLabel = `NEW BEST (-${diff}s)`;
+            writeStoredPB(finalTime);
+          } else {
+            pbLabel = `PB ${initialPb.toFixed(1)}s`;
+          }
+
+          setHud({
+            altitude: 100,
+            elapsed: finalTime,
+            won: true,
+            skills: collectedSkills.size,
+            totalSkills: currentGeo.totalSkills,
+            pb: nextPb,
+            pbLabel,
+          });
         } else if (now - state.lastHudUpdate > 90) {
           state.lastHudUpdate = now;
           const totalClimb = Math.max(1, currentGeo.floorY - PLAYER_H - currentGeo.summitY);
           const climbed = Math.max(0, currentGeo.floorY - PLAYER_H - state.y);
           const pct = Math.min(99, Math.round((climbed / totalClimb) * 100));
-          setHud({ altitude: pct, elapsed: (now - state.startTime) / 1000, won: false });
+          setHud({
+            altitude: pct,
+            elapsed: (now - state.startTime) / 1000,
+            won: false,
+            skills: collectedSkills.size,
+            totalSkills: currentGeo.totalSkills,
+            pb: initialPb,
+            pbLabel: initialPb ? `PB ${initialPb.toFixed(1)}s` : '',
+          });
         }
 
         if (state.puffTimer > 0) {
           state.puffTimer = Math.max(0, state.puffTimer - dt);
           if (state.puffTimer === 0 && puffRef.current) {
             puffRef.current.style.opacity = '0';
+          }
+        }
+
+        if (state.springTimer > 0) {
+          state.springTimer = Math.max(0, state.springTimer - dt);
+          if (springRef.current) {
+            const progress = 1 - state.springTimer / 0.34;
+            springRef.current.style.opacity = `${Math.max(0, 1 - progress)}`;
+            if (state.springTimer === 0) {
+              springRef.current.style.opacity = '0';
+            }
           }
         }
       }
@@ -362,6 +487,13 @@ export default function ClimberGame({ active, onExit }) {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      flashTimers.forEach((timer, el) => {
+        window.clearTimeout(timer);
+        el.classList.remove('climber-landed');
+      });
+      flashTimers.clear();
+      collectedSkills.forEach((el) => el.classList.remove('climber-skill-collected'));
+      collectedSkills.clear();
       inputRef.current = { left: false, right: false, up: false };
       jumpQueuedRef.current = false;
     };
@@ -376,6 +508,8 @@ export default function ClimberGame({ active, onExit }) {
     }
     inputRef.current[dir] = pressed;
   };
+
+  const fullStackCollected = hud.totalSkills > 0 && hud.skills === hud.totalSkills;
 
   return (
     <>
@@ -393,6 +527,7 @@ export default function ClimberGame({ active, onExit }) {
         ))}
 
         <div ref={puffRef} className="climber-puff" />
+        <div ref={springRef} className="climber-spring-ripple" />
 
         <div ref={playerRef} className="climber-sprite">
           <svg width={PLAYER_W} height={PLAYER_H} viewBox="0 0 14 18" fill="none">
@@ -411,7 +546,18 @@ export default function ClimberGame({ active, onExit }) {
             {hud.won ? 'SUMMIT REACHED' : 'CLIMB // SITE'}
           </span>
           <span className="climber-hud-stat">ALT {String(hud.altitude).padStart(2, '0')}%</span>
+          <span className="climber-hud-stat">
+            SKILLS {String(hud.skills).padStart(2, '0')}/{String(hud.totalSkills).padStart(2, '0')}
+          </span>
           <span className="climber-hud-stat">{hud.elapsed.toFixed(1)}s</span>
+          {hud.pbLabel ? (
+            <span className={`climber-hud-stat ${hud.won && hud.pbLabel.startsWith('NEW') ? 'is-record' : ''}`}>
+              {hud.pbLabel}
+            </span>
+          ) : null}
+          {hud.won && fullStackCollected ? (
+            <span className="climber-hud-stat is-record">100% STACK</span>
+          ) : null}
           {hud.won ? (
             <button type="button" className="climber-hud-btn is-accent" onClick={restartRun}>
               Replay
