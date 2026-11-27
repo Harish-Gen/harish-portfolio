@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
-const PLAYER_W = 14;
-const PLAYER_H = 18;
+const PLAYER_W = 16;
+const PLAYER_H = 20;
 const GRAVITY = 1450;
 const MOVE_SPEED = 270;
 const JUMP_VELOCITY = -560;
-const DOUBLE_JUMP_VELOCITY = -510;
+const DOUBLE_JUMP_VELOCITY = -550;
 const SPRING_VELOCITY = -790;
 const MAX_FALL_SPEED = 780;
+const WALL_SLIDE_SPEED = 52;
 const MAX_SAFE_GAP = 125;
 const PB_STORAGE_KEY = 'harish_climber_pb';
 
@@ -71,9 +72,10 @@ function buildLevelGeometry() {
 
     const isSkill = el.classList.contains('skill-tag');
     const isSpring = el.classList.contains('btn-primary');
+    const isWall = el.classList.contains('project-card') || el.classList.contains('contact-form');
     if (isSkill) totalSkills += 1;
 
-    platforms.push({ x, y, w, h, kind: 'dom', el, isSkill, isSpring });
+    platforms.push({ x, y, w, h, kind: 'dom', el, isSkill, isSpring, isWall });
   });
 
   // Floor at the bottom near the footer so the player has a solid starting ledge
@@ -147,7 +149,8 @@ export default function ClimberGame({ active, onExit }) {
   const [runId, setRunId] = useState(0);
 
   const playerRef = useRef(null);
-  const puffRef = useRef(null);
+  const webLineRef = useRef(null);
+  const webAccentRef = useRef(null);
   const springRef = useRef(null);
   const inputRef = useRef({ left: false, right: false, up: false });
   const jumpQueuedRef = useRef(false);
@@ -194,6 +197,7 @@ export default function ClimberGame({ active, onExit }) {
       vy: 0,
       onGround: true,
       onRail: false,
+      wallSide: 0, // -1 left wall, 1 right wall
       coyoteTimer: 0,
       jumpsLeft: 2,
       facing: 1,
@@ -201,7 +205,9 @@ export default function ClimberGame({ active, onExit }) {
       startTime: performance.now(),
       lastFrame: performance.now(),
       lastHudUpdate: 0,
-      puffTimer: 0,
+      webTimer: 0,
+      webAnchorX: 0,
+      webAnchorY: 0,
       springTimer: 0,
     };
 
@@ -304,7 +310,7 @@ export default function ClimberGame({ active, onExit }) {
           state.onRail = false;
         }
 
-        // Coyote time & jump handling
+        // Coyote time & jump / web-zip handling
         if (state.onGround) {
           state.coyoteTimer = 0.1;
           state.jumpsLeft = 2;
@@ -314,19 +320,52 @@ export default function ClimberGame({ active, onExit }) {
 
         if (jumpQueuedRef.current) {
           jumpQueuedRef.current = false;
-          if (state.coyoteTimer > 0) {
+          if (state.wallSide !== 0 && !state.onGround) {
+            // Wall-kick off .project-card / .contact-form edge
+            state.vy = JUMP_VELOCITY * 0.96;
+            state.vx = -state.wallSide * 250;
+            state.facing = -state.wallSide;
+            state.wallSide = 0;
+            state.jumpsLeft = 1;
+          } else if (state.coyoteTimer > 0) {
             state.vy = JUMP_VELOCITY;
             state.onGround = false;
             state.coyoteTimer = 0;
             state.jumpsLeft = 1;
           } else if (state.jumpsLeft > 0) {
+            // Web-zip toward nearest platform above
+            const centerX = state.x + PLAYER_W / 2;
+            let bestTarget = null;
+            let bestScore = Infinity;
+            for (let i = 0; i < currentGeo.platforms.length; i += 1) {
+              const p = currentGeo.platforms[i];
+              const bottomY = p.y + p.h;
+              const dy = state.y - bottomY;
+              if (dy > 8 && dy < 270) {
+                const clampedX = Math.max(p.x + 8, Math.min(p.x + p.w - 8, centerX));
+                const dx = Math.abs(clampedX - centerX);
+                if (dx < 190) {
+                  const score = dy + dx * 0.85;
+                  if (score < bestScore) {
+                    bestScore = score;
+                    bestTarget = { x: clampedX, y: p.y + Math.min(p.h, 12) };
+                  }
+                }
+              }
+            }
+
+            state.webAnchorX = bestTarget
+              ? bestTarget.x
+              : Math.max(16, Math.min(currentGeo.viewWidth - 16, centerX + state.facing * 26));
+            state.webAnchorY = bestTarget
+              ? bestTarget.y
+              : Math.max(20, state.y - 165);
+            state.webTimer = 0.24;
+
+            const pullX = state.webAnchorX - centerX;
+            state.vx += Math.max(-180, Math.min(180, pullX * 1.4));
             state.vy = DOUBLE_JUMP_VELOCITY;
             state.jumpsLeft -= 1;
-            state.puffTimer = 0.22;
-            if (puffRef.current) {
-              puffRef.current.style.transform = `translate3d(${state.x - 4}px, ${state.y + PLAYER_H - 4}px, 0)`;
-              puffRef.current.style.opacity = '1';
-            }
           }
         }
 
@@ -337,6 +376,8 @@ export default function ClimberGame({ active, onExit }) {
 
         const wasOnGround = state.onGround;
         const prevBottom = state.y + PLAYER_H;
+        const prevLeft = state.x;
+        const prevRight = state.x + PLAYER_W;
         state.x += state.vx * dt;
         state.y += state.vy * dt;
 
@@ -347,6 +388,40 @@ export default function ClimberGame({ active, onExit }) {
         } else if (state.x > currentGeo.viewWidth - PLAYER_W - 8) {
           state.x = currentGeo.viewWidth - PLAYER_W - 8;
           state.vx = 0;
+        }
+
+        // Wall-cling check on .project-card / .contact-form side edges
+        state.wallSide = 0;
+        if (!state.onGround && !state.onRail && state.vy > -40) {
+          for (let i = 0; i < currentGeo.platforms.length; i += 1) {
+            const p = currentGeo.platforms[i];
+            if (!p.isWall) continue;
+            const overlapsY = state.y + PLAYER_H > p.y + 6 && state.y < p.y + p.h - 4;
+            if (!overlapsY) continue;
+
+            // Touching left edge of card (wall is to player's right -> wallSide = 1)
+            if (prevRight <= p.x + 5 && state.x + PLAYER_W >= p.x - 2 && (right || state.vx >= 0)) {
+              state.x = p.x - PLAYER_W;
+              state.vx = 0;
+              state.vy = Math.min(state.vy, WALL_SLIDE_SPEED);
+              state.wallSide = 1;
+              state.facing = 1;
+              state.jumpsLeft = Math.max(state.jumpsLeft, 1);
+              flashElement(p.el);
+              break;
+            }
+            // Touching right edge of card (wall is to player's left -> wallSide = -1)
+            if (prevLeft >= p.x + p.w - 5 && state.x <= p.x + p.w + 2 && (left || state.vx <= 0)) {
+              state.x = p.x + p.w;
+              state.vx = 0;
+              state.vy = Math.min(state.vy, WALL_SLIDE_SPEED);
+              state.wallSide = -1;
+              state.facing = -1;
+              state.jumpsLeft = Math.max(state.jumpsLeft, 1);
+              flashElement(p.el);
+              break;
+            }
+          }
         }
 
         // One-way platform landing (only when falling)
@@ -450,11 +525,22 @@ export default function ClimberGame({ active, onExit }) {
           });
         }
 
-        if (state.puffTimer > 0) {
-          state.puffTimer = Math.max(0, state.puffTimer - dt);
-          if (state.puffTimer === 0 && puffRef.current) {
-            puffRef.current.style.opacity = '0';
-          }
+        if (state.webTimer > 0) {
+          state.webTimer = Math.max(0, state.webTimer - dt);
+          const handX = state.x + (state.facing > 0 ? 13 : 3);
+          const handY = state.y + 8;
+          const opacity = Math.min(1, state.webTimer / 0.12);
+          [webLineRef.current, webAccentRef.current].forEach((lineEl) => {
+            if (!lineEl) return;
+            lineEl.setAttribute('x1', handX.toFixed(1));
+            lineEl.setAttribute('y1', handY.toFixed(1));
+            lineEl.setAttribute('x2', state.webAnchorX.toFixed(1));
+            lineEl.setAttribute('y2', state.webAnchorY.toFixed(1));
+            lineEl.style.opacity = `${opacity}`;
+          });
+        } else {
+          if (webLineRef.current) webLineRef.current.style.opacity = '0';
+          if (webAccentRef.current) webAccentRef.current.style.opacity = '0';
         }
 
         if (state.springTimer > 0) {
@@ -526,16 +612,44 @@ export default function ClimberGame({ active, onExit }) {
           />
         ))}
 
-        <div ref={puffRef} className="climber-puff" />
+        <svg className="climber-web-layer" aria-hidden="true">
+          <line ref={webLineRef} className="climber-web-line" x1="0" y1="0" x2="0" y2="0" />
+          <line ref={webAccentRef} className="climber-web-accent" x1="0" y1="0" x2="0" y2="0" />
+        </svg>
         <div ref={springRef} className="climber-spring-ripple" />
 
         <div ref={playerRef} className="climber-sprite">
-          <svg width={PLAYER_W} height={PLAYER_H} viewBox="0 0 14 18" fill="none">
-            <rect x="3" y="1" width="8" height="7" fill="currentColor" />
-            <rect x="7" y="3" width="3" height="2" fill="var(--red)" />
-            <rect x="4" y="8" width="6" height="6" fill="currentColor" />
-            <rect x="3" y="14" width="3" height="4" fill="currentColor" />
-            <rect x="8" y="14" width="3" height="4" fill="currentColor" />
+          <svg
+            width={PLAYER_W}
+            height={PLAYER_H}
+            viewBox="0 0 16 20"
+            fill="none"
+            shapeRendering="crispEdges"
+          >
+            {/* Head / Mask */}
+            <rect x="4" y="1" width="8" height="7" fill="#e1262f" />
+            <rect x="3" y="2" width="1" height="5" fill="#111111" />
+            <rect x="12" y="2" width="1" height="5" fill="#111111" />
+            <rect x="5" y="0" width="6" height="1" fill="#111111" />
+            {/* Sharp White Pixel Eyes */}
+            <rect x="5" y="3" width="2" height="2" fill="#ffffff" />
+            <rect x="6" y="4" width="2" height="1" fill="#ffffff" />
+            <rect x="10" y="3" width="2" height="2" fill="#ffffff" />
+            <rect x="9" y="4" width="2" height="1" fill="#ffffff" />
+            {/* Torso & Suit Accents */}
+            <rect x="4" y="8" width="8" height="6" fill="#e1262f" />
+            <rect x="3" y="8" width="1" height="5" fill="#111111" />
+            <rect x="12" y="8" width="1" height="5" fill="#111111" />
+            <rect x="7" y="9" width="2" height="3" fill="#111111" />
+            <rect x="4" y="12" width="8" height="2" fill="#111111" />
+            {/* Arms / Web-shooting Hands */}
+            <rect x="2" y="9" width="1" height="3" fill="#e1262f" />
+            <rect x="13" y="9" width="1" height="3" fill="#e1262f" />
+            {/* Legs & Boots */}
+            <rect x="4" y="14" width="3" height="3" fill="#111111" />
+            <rect x="9" y="14" width="3" height="3" fill="#111111" />
+            <rect x="4" y="17" width="3" height="3" fill="#e1262f" />
+            <rect x="9" y="17" width="3" height="3" fill="#e1262f" />
           </svg>
         </div>
       </div>
