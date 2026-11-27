@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import './App.css';
 import './Enhancements.css';
+import ClimberGame from './components/ClimberGame';
 
 /* ------------------- DATA ------------------- */
 const PROJECTS = [
@@ -407,6 +408,7 @@ const ProjectCard = ({ project, index }) => {
 
 export default function App() {
   const [darkTheme, setDarkTheme] = useState(true);
+  const [climberActive, setClimberActive] = useState(false);
   const toggleButtonRef = useRef(null);
   const themeTransitioningRef = useRef(false);
 
@@ -689,8 +691,20 @@ export default function App() {
       </section>
 
       <footer style={{ padding: '60px 0', textAlign: 'center', opacity: 0.5, fontSize: '0.85rem' }}>
-        <p>© 2026 Harish Kumar. Crafted with passion.</p>
+        <p>
+          © 2026 Harish Kumar. Crafted with passion.
+          <button
+            type="button"
+            className={`system-status-btn ${climberActive ? 'is-active' : ''}`}
+            onClick={() => setClimberActive((prev) => !prev)}
+            title={climberActive ? 'Exit climber mode' : 'Launch climber'}
+          >
+            / {climberActive ? 'CLIMBING' : 'SYSTEM ONLINE'}
+          </button>
+        </p>
       </footer>
+
+      <ClimberGame active={climberActive} onExit={() => setClimberActive(false)} />
     </div>
   );
 }
